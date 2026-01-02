@@ -1,0 +1,449 @@
+{
+  "name": "Task 4",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{JSON.stringify($json)}}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a JSON extraction engine.\nREALLY IMPORTANT:\n- output ONLY JSON that matches the schema form.\n- do not add any text before or after the JSON\n- do not add explanations, comments, explanations\n- do not add empty lines or spaces before the character {\n- JSON must start strictly with {\n- JSON must be correct and fully comply with the scheme: title, skills, tools, other_requirements\n\nTHE OUTPUT MUST MATCH THE SCHEMA PASSED THROUGH THE STRUCTURED OUTPUT PARSER:\n{\n  \"skills\": [\"string\"],\n  \"tools\": [\"string\"],\n  \"other_requirements\": [\"string\"]\n}\nYou must extract information about skills, tools and requirements from\n{{ $json.description }}\n\nIf a field is missing, output an empty array or an empty string."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "836689c1-9486-41f0-9856-c858e66a0584",
+      "name": "AI Agent",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "GigaChat/GigaChat-2-Max",
+          "mode": "list",
+          "cachedResultName": "GigaChat/GigaChat-2-Max"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        176
+      ],
+      "id": "525d6e52-b7a7-4ed0-8de5-fecaa8f15c2c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "2MGp0xrzZfIKARVU",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 30
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        848,
+        208
+      ],
+      "id": "20ad13b6-7d09-48e6-9587-5d99e502d020",
+      "name": "Simple Memory",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "chatId": "=-1003562819307",
+        "text": "={{$json.output}}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        0
+      ],
+      "id": "537c022e-91e1-4c9d-a97a-ebc53ce5e44f",
+      "name": "Send a text message",
+      "webhookId": "9bfd32aa-913f-47eb-9536-8b56f40964e2",
+      "credentials": {
+        "telegramApi": {
+          "id": "OfW3yeL6ns9dD1MM",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5b678e04-e3f9-44ab-bc3f-d7a1654e1ae5",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.hh.ru/vacancies",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "data scientist"
+            },
+            {
+              "name": "area",
+              "value": "1"
+            },
+            {
+              "name": "metro",
+              "value": "4"
+            },
+            {
+              "name": "per_page",
+              "value": "10"
+            },
+            {
+              "name": "page",
+              "value": "0"
+            },
+            {
+              "name": "language",
+              "value": "ru"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        176,
+        0
+      ],
+      "id": "b10928c1-8530-4234-b241-27fc81b164ec",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        352,
+        0
+      ],
+      "id": "3ef55550-6778-4f2f-8730-5eadaaef3f82",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"skills\": [\"skill1\", \"skill2\"],\n  \"tools\": [\"tool1\", \"tool2\"],\n  \"other_requirements\": [\"req1\", \"req2\"]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        992,
+        176
+      ],
+      "id": "538a30a0-67a7-4450-91e4-0ea8d8d6f466",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hh.ru/vacancies/{{$json[\"id\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "a704d19a-07e0-4323-b39c-9db9cc0d7f55",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const vacancies = $input.all();\n\nconst skillMap = {\n  // Языки программирования\n  'python': 'python',\n  'питон': 'python',\n  'пайтон': 'python',\n\n  // Машинное обучение\n  'ml': 'ml',\n  'машинное обучение': 'ml',\n  'машинного обучения': 'ml',\n  'мл': 'ml',\n  'dl': 'dl',\n  'deep learning': 'dl',\n  'глубокое обучение': 'dl',\n  'нейронные сети': 'dl',\n  'nn': 'dl',\n  'rl': 'rl',\n  'reinforcement learning': 'rl',\n  'обучение с подкреплением': 'rl',\n  'supervised learning': 'supervised',\n  'обучение с учителем': 'supervised',\n  'unsupervised learning': 'unsupervised',\n  'обучение без учителя': 'unsupervised',\n  'tensorflow': 'tensorflow',\n  'pytorch': 'pytorch',\n  'keras': 'keras',\n  'scikit-learn': 'sklearn',\n  'sklearn': 'sklearn',\n  'xgboost': 'xgboost',\n  'lightgbm': 'lightgbm',\n  'catboost': 'catboost',\n  'statsmodels': 'statsmodels',\n  'pandas': 'pandas',\n  'numpy': 'numpy',\n\n  // Визуализация и аналитика\n  'matplotlib': 'matplotlib',\n  'seaborn': 'seaborn',\n  'plotly': 'plotly',\n  'tableau': 'tableau',\n  'power bi': 'power bi',\n  'eda': 'eda',\n  'exploratory data analysis': 'eda',\n\n  // Работа с данными и БД\n  'sql': 'sql',\n  'postgresql': 'postgresql',\n  'mysql': 'mysql',\n  'mongodb': 'mongodb',\n  'nosql': 'nosql',\n  'bigquery': 'bigquery',\n  'hive': 'hive',\n  'spark': 'spark',\n  'hadoop': 'hadoop',\n\n  // DevOps / workflow\n  'docker': 'docker',\n  'kubernetes': 'kubernetes',\n  'airflow': 'airflow',\n  'mlflow': 'mlflow',\n\n  // Прочие навыки\n  'statistical analysis': 'statistics',\n  'математическая статистика': 'statistics',\n  'probability theory': 'probability',\n  'теория вероятностей': 'probability',\n  'data visualization': 'data visualization',\n  'визуализация данных': 'data visualization',\n  'feature engineering': 'feature engineering',\n  'инжиниринг признаков': 'feature engineering',\n  'data preprocessing': 'data preprocessing',\n  'предобработка данных': 'data preprocessing',\n  'анализ данных': 'data analysis',\n  'data analysis': 'data analysis'\n};\n\n// Собираем все нормализованные навыки\nlet allSkills = [];\nvacancies.forEach(v => {\n  const output = v.json.output || {};\n  const { skills = [], tools = [], other_requirements = [] } = output;\n  const combined = [...skills, ...tools, ...other_requirements];\n\n  combined.forEach(s => {\n    const lowerS = s.toLowerCase();\n    for (const key in skillMap) {\n      if (lowerS.includes(key.toLowerCase())) {\n        allSkills.push(skillMap[key]);\n        return;\n      }\n    }\n    allSkills.push(lowerS);\n  });\n});\n\n// Считаем количество каждого навыка\nconst skillCounts = allSkills.reduce((acc, skill) => {\n  acc[skill] = (acc[skill] || 0) + 1;\n  return acc;\n}, {});\n\n// Получаем топ-15\nconst top15 = Object.entries(skillCounts)\n  .sort((a, b) => b[1] - a[1])\n  .slice(0, 15)\n  .map(([skill, count]) => ({ skill, count }));\n\nreturn [{ json: { top15, totalVacancies: vacancies.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        0
+      ],
+      "id": "a84d04f7-be52-48a1-800b-fa9b07367b26",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{JSON.stringify($json)}}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an AI assistant that generates a weekly Russian-language report of the most frequent skills and requirements extracted from job vacancies.\n\nInput: a JSON array of objects in the format:\n[\n  {\"skill\": \"ml\", \"count\": 10},\n  {\"skill\": \"python\", \"count\": 2},\n  ...\n]\n\nTasks:\n\n1. Write one short summary sentence in Russian:\n\"На этой неделе я спарсил N свежих вакансий по выбранному направлению. Самыми популярными являются следующие требования:\"\n[empty line]\n2. Then output the list of skills in descending order of \"count\".\nEach line must follow this format:\n\"- <Skill Name>: <Count>\"\nNo other symbols, formatting, or explanations are allowed.\n\n3. Replace internal skill keys with standardized human-readable Russian names. Use the examples below:\n- ml → Машинное обучение\n- dl → Глубокое обучение\n- python → Python\n- sql → SQL\n- data analysis → Анализ данных\n- pandas → Pandas\n- numpy → NumPy\n- statsmodels → StatsModels\n- sklearn → Scikit-Learn\n- xgboost → XGBoost\n- catboost → CatBoost\n- lightgbm → LightGBM\n- pytorch → PyTorch\n- prophet → Prophet\netc.\n\n4. Very important formatting rules:\n- Output must be plain text only.\n- Absolutely no Markdown symbols such as *, _, ~, `, [, ], (, ), #, +, =, {, }, >, |, !.\n- Do not add code blocks.\n- Do not add explanations.\n- Do not add extra newlines.\n- Output must contain only the summary sentence and the list formatted exactly as specified.\n\n5. The output must be fully compatible with Telegram without requiring Markdown escaping."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        0
+      ],
+      "id": "25f1ceed-c097-43d1-befd-aebf5ea35889",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "GigaChat/GigaChat-2-Max",
+          "mode": "list",
+          "cachedResultName": "GigaChat/GigaChat-2-Max"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        192
+      ],
+      "id": "c0c921af-94c8-4e30-9a25-00bc082dee8e",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "2MGp0xrzZfIKARVU",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 30
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1488,
+        240
+      ],
+      "id": "0713f47c-3fd1-4e78-8b0b-5c9ef63af908",
+      "name": "Simple Memory1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "GigaChat/GigaChat-2-Max",
+          "mode": "list",
+          "cachedResultName": "GigaChat/GigaChat-2-Max"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        992,
+        320
+      ],
+      "id": "30d0a5b1-9e44-4bfd-9231-aa28bd25319d",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "2MGp0xrzZfIKARVU",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e156a6c1-24f3-400d-bcd5-826beb4dd918",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5bda87043bd53b0fecbf2f3d074041daa292d672270113a418cb880c581ae971"
+  },
+  "id": "esUNyNRq3SXdcXDi",
+  "tags": []
+}

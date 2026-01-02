@@ -1,0 +1,322 @@
+{
+  "name": "Task 3",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data }}",
+        "options": {
+          "systemMessage": "==Ты — редактор новостного дайджеста. Получаешь данные о новостях в формате JSON.\\n\\nТвоя задача — создать красиво оформленный дайджест для отправки в Telegram.\\n\\nВходные данные:\\n{{ JSON.stringify($input.all().map(i => i.json), null, 2) }}\\n\\nТребования к дайджесту:\\n1. Сгруппируй новости по каналам (поле channel)\\n2. Для каждого канала напиши: **Название канала** — количество новостей\\n3. Пронумеруй новости внутри каждого канала\\n4. Для каждой новости:\\n   - Возьми текст из поля summary (если это JSON-строка — распарси её и достань content или summary)\\n   - Добавь ссылку из поля link (формат: ссылка)\\n5. Начни дайджест с заголовка: **Дайджест новостей**\\n\\nВажно: верни ТОЛЬКО готовый текст дайджеста, без комментариев, без обёрток, без кода.\\nФормат для Telegram с Markdown.\\n\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        240
+      ],
+      "id": "419e3131-f4c9-4c3c-b636-1292280f980c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "GigaChat/GigaChat-2-Max",
+          "mode": "list",
+          "cachedResultName": "GigaChat/GigaChat-2-Max"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        416
+      ],
+      "id": "cd6e8260-ac8c-438c-b46d-7c7c7aaa3106",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "2MGp0xrzZfIKARVU",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 30
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        416
+      ],
+      "id": "374633b7-fec1-42b8-93b5-94de2bbabf34",
+      "name": "Simple Memory",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "chatId": "-1003562819307",
+        "text": "={{$node[\"AI Agent\"].json[\"output\"]}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        224
+      ],
+      "id": "43241c7e-14c0-49ef-ae69-dddb57a61223",
+      "name": "Send a text message",
+      "webhookId": "4c70f416-d2f4-456b-8c84-5ee0549aa079",
+      "credentials": {
+        "telegramApi": {
+          "id": "yQB0AsKJ9CSWu6Bp",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -592,
+        240
+      ],
+      "id": "8f7863a0-f020-4a00-9fb0-c1e71efaba43",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://fetchrss.com/feed/1vPo4cAJo9Fj1vPoAC054FU3.rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        240
+      ],
+      "id": "546cf9df-2cf7-494e-b5a1-336d70adf3d3",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "url": "https://fetchrss.com/feed/1vPo4cAJo9Fj1vPnwtFCK2Py.rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        64
+      ],
+      "id": "8f18b315-fd17-4d89-a410-dcfc166ba412",
+      "name": "RSS Read1"
+    },
+    {
+      "parameters": {
+        "url": "https://fetchrss.com/feed/1vPo4cAJo9Fj1vPpJ9AAxF74.rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        416
+      ],
+      "id": "bea81df1-c343-4159-8355-a8738c06a327",
+      "name": "RSS Read2"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -112,
+        224
+      ],
+      "id": "c062c43d-37a9-48bb-8348-abc1eb32720f",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        96,
+        240
+      ],
+      "id": "15d28016-a1eb-4141-9f48-bb8bda399a05",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.output || '';\n\nconst cleaned = text\n  // 1. Убираем ВСЕ дефисы (кроме тех в t.me)\n  .replace(/(?<!t\\.me\\/[^\\s]*)-/g, ' ')\n  // 2. Экранируем другие проблемные символы\n  .replace(/[<>]/g, ' ')\n  .replace(/&/g, 'и')\n  // 3. Убираем лишние пробелы\n  .replace(/\\s+/g, ' ')\n  // 4. Добавляем переносы строк\n  .replace(/(\\d+\\))/g, '\\n$1')\n  .replace(/(t\\.me\\/[^\\s,]+)(?=\\s+\\d+\\))/g, '$1\\n')\n  // 5. Обрезаем до 3500 символов\n  .substring(0, 3500)\n  .trim();\n\nconsole.log('Очищенный текст длиной:', cleaned.length);\n\n// Находим символ на позиции 2655 для диагностики\nif (text.length > 2655) {\n  const start = Math.max(0, 2650);\n  const end = Math.min(text.length, 2660);\n  console.log('Проблемная область (2655):', text.substring(start, end));\n  console.log('Символы:', text.substring(start, end).split('').map(c => `${c}(${c.charCodeAt(0)})`).join(' '));\n}\n\nreturn [{ \n  json: { \n    output: cleaned,\n    originalLength: text.length\n  } \n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        224
+      ],
+      "id": "e53713d8-22e0-4310-8d3f-f8123bfe2d97",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RSS Read1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Read1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Read2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4d08fd13-5850-4443-815c-7eb08c0440ac",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5bda87043bd53b0fecbf2f3d074041daa292d672270113a418cb880c581ae971"
+  },
+  "id": "1EwRrBOfrq0Z3Uf4",
+  "tags": []
+}
